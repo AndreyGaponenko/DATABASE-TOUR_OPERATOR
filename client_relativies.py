@@ -61,7 +61,7 @@ while i < 200:
             """
             )
         con.commit()
-        if n[len(n)-1]=='-':
+        if n[len(n)-1]=='NULL':
             all_kind.append([name,index, birth])
             continue
         else:

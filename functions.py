@@ -41,7 +41,7 @@ def get_all_info():
         client = faker.simple_profile()
     age=str(datetime.date.today()-client['birthdate'])
     if (float(age.split()[0])/365 < 18):
-        n='-'
+        n='NULL'
         pers_document=get_birth_certificate()
     else:
         n=get_phone_number()

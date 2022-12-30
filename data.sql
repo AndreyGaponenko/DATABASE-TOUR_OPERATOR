@@ -167,3 +167,76 @@ where phone_number='-';
 Select name_country,currency,name_language from country
 INNER JOIN composition_languages on country.id_country = composition_languages.id_country
 INNER JOIN languages on languages.id_language = composition_languages.id_language;
+
+Select name_country,currency,name_language from country
+INNER JOIN composition_languages on country.id_country = composition_languages.id_country
+INNER JOIN languages on languages.id_language = composition_languages.id_language;
+DROP TABLE client,relativies,tour,sale,composition_sale,refund;
+
+SELECT s.id_sale,max(s.sum_money * (1 - d.size) ) as max_tour_cost --1.	Самая крупная продажа тура
+FROM sale s
+JOIN discount d ON s.id_discount = d.id_discount
+GROUP BY s.id_sale
+order by 2 desc
+LIMIT 1;
+
+SELECT c.id_client, sum(s.sum_money * (1 - d.size) ) as sale_sum --2.	Топ 10 клиентов, потративших больше всего денег
+FROM client c
+JOIN sale s ON c.id_client = s.id_client
+JOIN discount d ON s.id_discount = d.id_discount
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+
+select e.id_employee, sum(r.sum_money) as refund_sum                         --3. Топ 5 работников, вернувших больше всего денег
+from employee e join refund r on e.id_employee = r.id_employee
+group by 1
+order by 2 desc
+limit 5;
+
+select c.id_country, c.name_country, count(cs.id_client) as visitors_cnt -- 4. Топ 5 стран, которых посетило наибольшее число людей
+from country c join tour t on c.id_country = t.id_country
+join sale s on t.id_tour = s.id_tour
+join composition_sale cs on s.id_sale = cs.id_sale
+group by 1, 2
+order by 3 desc
+limit 5;
+
+select c.name_country, count(id_language) as lang_cnt -- 5. Топ 5 стран по количеству языков, на которых они говорят
+from country c join composition_languages cs on c.id_country = cs.id_country
+group by 1
+order by 2 desc
+limit 5;
+
+select id_client from sale                              -- 6. Вывести людей, которые покупали только туры с типом еды - завтрак
+except
+select s.id_client
+from sale s join tour t on s.id_tour = t.id_tour
+join food f on t.id_food = f.id_food
+where f.comments != 'В цену включен только завтрак.';
+
+select fio from client c                                    --7.Вывести клиентов, которые никогда не были ни в одной стране
+where c.id_client IN(
+select c.id_client from client c
+except 
+select distinct cs.id_client from composition_sale cs
+order by 1);
+
+select fio, count(distinct t.id_country) quantity_countries from client c --8.пользователи, которые были только в одной стране
+inner join composition_sale cs on c.id_client=cs.id_client
+inner join sale s on cs.id_sale=s.id_sale
+inner join tour t on s.id_tour=t.id_tour
+group by 1
+having count(distinct t.id_country)=1;
+
+
+select name_country,                                                    --9.присваивание статусов странам по количеству языков, на которых можно пообщаться в стране, название которых заканчивается на 'ия'.
+case 
+when count(l.id_language) > 2 then 'многоязыковая страна'
+when count(l.id_language) > 1 then 'двухязыковая страна'
+else 'моноязыковая страна'
+end as состояние_языков from country co
+inner join composition_languages cl on co.id_country=cl.id_country
+inner join languages l on cl.id_language=l.id_language
+group by name_country
+having name_country like '%ия';
